@@ -33,11 +33,13 @@ def lambda_handler(event, context):
     #     print(e)
 
     #     raise e
+    platform_data = platform.uname()
 
     return {
         "statusCode": 200,
         "body": json.dumps({
-            "message": f"{platform.uname}",
+            "message": f"Welcome to a lambda running on an {platform_data.machine} machine using an {platform_data.processor} processor",
             # "location": ip.text.replace("\n", "")
         }),
     }
+
