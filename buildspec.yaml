@@ -10,3 +10,5 @@ artifacts:
   files:
     - packaged-template.yml
     - appspec.yaml
+    - appspec.yml
+    - AppSpec.yaml
