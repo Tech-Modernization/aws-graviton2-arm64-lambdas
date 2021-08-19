@@ -9,4 +9,4 @@ phases:
 artifacts:
   files:
     - packaged-template.yml
-    - appspec.yml
+    - appspec.yaml
