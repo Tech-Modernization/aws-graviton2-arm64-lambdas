@@ -8,7 +8,7 @@ phases:
       - sam package --template-file template.yaml --s3-bucket mmw-graviton2 --output-template-file packaged-template.yml
   post_build:
     commands:
-      - sam deploy --stack-name HelloGraviton2 --region us-east-1 --s3-bucket mmw-graviton2
+      - sam deploy --stack-name HelloGraviton2 --region us-east-1 --s3-bucket mmw-graviton2 --capabilities CAPABILITY_IAM 
 artifacts:
   files:
     - packaged-template.yml
