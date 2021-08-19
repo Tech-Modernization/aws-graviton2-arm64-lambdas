@@ -15,5 +15,5 @@ Resources:
       Properties:
         Name: "HelloWorld" # Specify the name of your Lambda function
         Alias: "HelloWorld" # Specify the alias for your Lambda function
-        CurrentVersion: "0.0" # Specify the current version of your Lambda function
-        TargetVersion: "0.1" # Specify the version of your Lambda function to deploy
+        CurrentVersion: "0" # Specify the current version of your Lambda function
+        TargetVersion: "1" # Specify the version of your Lambda function to deploy
