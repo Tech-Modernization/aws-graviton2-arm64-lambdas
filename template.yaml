@@ -6,7 +6,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Architectures:
-        - arm64
+        - x86_64
       Code:
         ZipFile: |
           import json
@@ -34,10 +34,10 @@ Resources:
     Properties:
       FunctionName: !Ref Function
 
-  armVersion:
-    Type: AWS::Lambda::Version
-    Properties:
-      FunctionName: !Ref Function
+  # armVersion:
+  #   Type: AWS::Lambda::Version
+  #   Properties:
+  #     FunctionName: !Ref Function
 
   x86Alias:
     Type: AWS::Lambda::Alias
@@ -46,12 +46,12 @@ Resources:
       FunctionVersion: !GetAtt x86Version.Version
       Name: x86
 
-  armAlias:
-    Type: AWS::Lambda::Alias
-    Properties:
-      FunctionName: !Ref Function
-      FunctionVersion: !GetAtt armVersion.Version
-      Name: arm
+  # armAlias:
+  #   Type: AWS::Lambda::Alias
+  #   Properties:
+  #     FunctionName: !Ref Function
+  #     FunctionVersion: !GetAtt armVersion.Version
+  #     Name: arm
 
   Role:
     Type: AWS::IAM::Role
