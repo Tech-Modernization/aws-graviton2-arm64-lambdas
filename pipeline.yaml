@@ -15,6 +15,7 @@ Resources:
             Principal:
               Service:
                 - "codepipeline.amazonaws.com"
+                - "cloudformation.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       ManagedPolicyArns:
@@ -51,6 +52,7 @@ Resources:
               - "sts:AssumeRole"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
       Path: "/"
 
   AppPipeline:
@@ -76,7 +78,7 @@ Resources:
               Owner: AWS
         - Name: Deploy
           Actions:
-          - Name: ExecuteChangeSet
+          - Name: Deploy
             ActionTypeId:
               Category: Deploy
               Owner: AWS
@@ -88,7 +90,7 @@ Resources:
               Capabilities: CAPABILITY_IAM
               RoleArn: !GetAtt CodePipelineRole.Arn
               StackName: GravitonFunction
-              TemplatePath: 'graviton2::template.yml'
+              TemplatePath: 'graviton2::template.yaml'
             OutputArtifacts: []
             InputArtifacts:
               - Name: graviton2
