@@ -1,0 +1,112 @@
+Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: contino-graviton-demo
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: "/"
+
+  Application:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: GravitonMigration
+      ComputePlatform: Lambda
+
+  Deployment:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref Application
+      DeploymentStyle:
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+        DeploymentType: BLUE_GREEN
+      ServiceRoleArn: !GetAtt DeployRole.Arn
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "codedeploy.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+      Path: "/"
+
+  AppPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+          - InputArtifacts: []
+            OutputArtifacts:
+              - Name: graviton2
+            Name: source
+            Configuration:
+              RepositoryName: graviton2
+              BranchName: main
+              PollForSourceChanges: 'false'
+            RunOrder: 1
+            ActionTypeId:
+              Version: '1'
+              Provider: CodeCommit
+              Category: Source
+              Owner: AWS
+        - Name: Deploy
+          Actions:
+          - Name: ExecuteChangeSet
+            ActionTypeId:
+              Category: Deploy
+              Owner: AWS
+              Provider: CloudFormation
+              Version: '1'
+            RunOrder: 1
+            Configuration:
+              ActionMode: REPLACE_ON_FAILURE
+              Capabilities: CAPABILITY_IAM
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              StackName: GravitonFunction
+              TemplatePath: 'graviton2::template.yml'
+            OutputArtifacts: []
+            InputArtifacts:
+              - Name: graviton2
+        - Name: Release
+          Actions:
+            -
+              Name: Release
+              InputArtifacts:
+                - Name: graviton2
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Ref Application
+                DeploymentGroupName: !Ref Deployment
+              RunOrder: 1
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
