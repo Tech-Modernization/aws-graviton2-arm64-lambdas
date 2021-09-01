@@ -6,14 +6,16 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Architectures:
-        - arm64
+        - x86_64
       Code:
         ZipFile: |
           import json
           import platform
 
 
-          def lambda_handler(*_):
+          def handler(event, _):
+              if event["Fail"]:
+                raise Exception("I was told to fail")
               platform_data = platform.uname()
 
               return {
@@ -25,7 +27,7 @@ Resources:
                   ),
               }
       FunctionName: Architecture
-      Handler: app.lambda_handler
+      Handler: index.handler
       Role: !GetAtt Role.Arn
       Runtime: python3.9
 
@@ -34,24 +36,17 @@ Resources:
     Properties:
       FunctionName: !Ref Function
 
-  armVersion:
-    Type: AWS::Lambda::Version
-    Properties:
-      FunctionName: !Ref Function
+  # armVersion:
+  #   Type: AWS::Lambda::Version
+  #   Properties:
+  #     FunctionName: !Ref Function
 
-  x86Alias:
+  current:
     Type: AWS::Lambda::Alias
     Properties:
       FunctionName: !Ref Function
       FunctionVersion: !GetAtt x86Version.Version
-      Name: x86
-
-  armAlias:
-    Type: AWS::Lambda::Alias
-    Properties:
-      FunctionName: !Ref Function
-      FunctionVersion: !GetAtt armVersion.Version
-      Name: arm
+      Name: current
 
   Role:
     Type: AWS::IAM::Role
