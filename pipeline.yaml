@@ -2,7 +2,12 @@ Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: contino-graviton-demo
+      BucketName: contino-g2-64-l
+
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: graviton2mmw
 
   CodePipelineRole:
     Type: AWS::IAM::Role
@@ -25,7 +30,7 @@ Resources:
   Application:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: GravitonMigration
+      ApplicationName: GravitonMigrationMMW
       ComputePlatform: Lambda
 
   Deployment:
@@ -68,10 +73,10 @@ Resources:
           Actions:
           - InputArtifacts: []
             OutputArtifacts:
-              - Name: graviton2
+              - Name: graviton2mmw
             Name: source
             Configuration:
-              RepositoryName: graviton2
+              RepositoryName: graviton2mmw
               BranchName: main
               PollForSourceChanges: 'false'
             RunOrder: 1
@@ -97,13 +102,13 @@ Resources:
               TemplatePath: 'graviton2::template.yaml'
             OutputArtifacts: []
             InputArtifacts:
-              - Name: graviton2
+              - Name: graviton2mmw
         - Name: Release
           Actions:
             -
               Name: Release
               InputArtifacts:
-                - Name: graviton2
+                - Name: graviton2mmw
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -154,7 +159,7 @@ Resources:
         detail-type:
           - 'CodeCommit Repository State Change'
         resources:
-          - arn:aws:codecommit:us-east-1:100682590469:graviton2
+          - arn:aws:codecommit:us-east-1:100682590469:graviton2mmw
         detail:
           event:
             - referenceCreated
