@@ -14,7 +14,7 @@ Resources:
 
 
           def handler(event, _):
-              if event["Fail"]:
+              if "Fail" in event:
                 raise Exception("I was told to fail")
               platform_data = platform.uname()
 
