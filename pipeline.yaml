@@ -1,13 +1,18 @@
+Parameters:
+  ProjectSuffix:
+    Type: String
+    Description: Please enter a suffix for the project components
+
 Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: contino-g2-64-l
+      BucketName: !Sub "graviton2-lambda-${ProjectSuffix}"
 
   CodeCommitRepository:
     Type: AWS::CodeCommit::Repository
     Properties:
-      RepositoryName: graviton2mmw
+      RepositoryName: !Sub "graviton2-lambda-${ProjectSuffix}"
 
   CodePipelineRole:
     Type: AWS::IAM::Role
@@ -30,7 +35,7 @@ Resources:
   Application:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: GravitonMigrationMMW
+      ApplicationName: !Sub "graviton2-lambda-${ProjectSuffix}"
       ComputePlatform: Lambda
 
   Deployment:
@@ -73,10 +78,10 @@ Resources:
           Actions:
           - InputArtifacts: []
             OutputArtifacts:
-              - Name: graviton2mmw
+              - Name: !Sub "graviton2-lambda-${ProjectSuffix}"
             Name: source
             Configuration:
-              RepositoryName: graviton2mmw
+              RepositoryName: !Sub "graviton2-lambda-${ProjectSuffix}"
               BranchName: main
               PollForSourceChanges: 'false'
             RunOrder: 1
@@ -102,13 +107,13 @@ Resources:
               TemplatePath: 'graviton2::template.yaml'
             OutputArtifacts: []
             InputArtifacts:
-              - Name: graviton2mmw
+              - Name: !Sub "graviton2-lambda-${ProjectSuffix}"
         - Name: Release
           Actions:
             -
               Name: Release
               InputArtifacts:
-                - Name: graviton2mmw
+                - Name: !Sub "graviton2-lambda-${ProjectSuffix}"
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -190,3 +195,14 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 0
       ComparisonOperator: GreaterThanThreshold
+
+Outputs:
+  CodeCommitRepoHTTPS:
+    Description: The HTTPS URL to clone the repository
+    Value: !GetAtt CodeCommitRepository.CloneUrlHttp
+  CodeCommitRepoSSH:
+    Description: The SSH URL to clone the repository
+    Value: !GetAtt CodeCommitRepository.CloneUrlSsh
+  CodeCommitRepoARN:
+    Description: The ARN of the CodeCommit Repo
+    Value: !GetAtt CodeCommitRepository.Arn
