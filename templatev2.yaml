@@ -6,7 +6,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Architectures:
-        - x86_64
+        - arm64
       Code:
         ZipFile: |
           import json
@@ -32,6 +32,11 @@ Resources:
       Runtime: python3.9
 
   x86Version:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref Function
+
+  armVersion:
     Type: AWS::Lambda::Version
     Properties:
       FunctionName: !Ref Function

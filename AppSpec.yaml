@@ -3,7 +3,7 @@ Resources:
   - myLambdaFunction:
       Type: AWS::Lambda::Function
       Properties:
-        Name: Architecture
-        Alias: x86
-        CurrentVersion: "3"
-        TargetVersion: "4"
+        Name: graviton
+        Alias: current
+        CurrentVersion: "1"
+        TargetVersion: "2"

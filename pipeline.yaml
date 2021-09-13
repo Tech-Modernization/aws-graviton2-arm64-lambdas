@@ -1,18 +1,16 @@
-Parameters:
-  ProjectSuffix:
-    Type: String
-    Description: Please enter a suffix for the project components
-
 Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "graviton2-lambda-${ProjectSuffix}"
+      BucketName: !Join
+        - "-"
+        - - "graviton2"
+          - !Ref AWS::AccountId
 
   CodeCommitRepository:
     Type: AWS::CodeCommit::Repository
     Properties:
-      RepositoryName: !Sub "graviton2-lambda-${ProjectSuffix}"
+      RepositoryName: "graviton2-lambda"
 
   CodePipelineRole:
     Type: AWS::IAM::Role
@@ -35,7 +33,7 @@ Resources:
   Application:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: !Sub "graviton2-lambda-${ProjectSuffix}"
+      ApplicationName: "graviton2-lambda"
       ComputePlatform: Lambda
 
   Deployment:
@@ -44,7 +42,15 @@ Resources:
       AlarmConfiguration:
         Alarms:
           - Name: !Ref functionErrors
+        Enabled: true
+        IgnorePollAlarmFailure: false
       ApplicationName: !Ref Application
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_ALARM
+          - DEPLOYMENT_STOP_ON_REQUEST
       DeploymentConfigName: CodeDeployDefault.LambdaLinear10PercentEvery1Minute
       DeploymentStyle:
         DeploymentOption: WITH_TRAFFIC_CONTROL
@@ -69,7 +75,7 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
       Path: "/"
 
-  AppPipeline:
+  CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt CodePipelineRole.Arn
@@ -78,10 +84,10 @@ Resources:
           Actions:
           - InputArtifacts: []
             OutputArtifacts:
-              - Name: !Sub "graviton2-lambda-${ProjectSuffix}"
+              - Name: "graviton2-lambda"
             Name: source
             Configuration:
-              RepositoryName: !Sub "graviton2-lambda-${ProjectSuffix}"
+              RepositoryName: "graviton2-lambda"
               BranchName: main
               PollForSourceChanges: 'false'
             RunOrder: 1
@@ -104,16 +110,16 @@ Resources:
               Capabilities: CAPABILITY_IAM
               RoleArn: !GetAtt CodePipelineRole.Arn
               StackName: GravitonFunction
-              TemplatePath: 'graviton2::template.yaml'
+              TemplatePath: 'graviton2-lambda::template.yaml'
             OutputArtifacts: []
             InputArtifacts:
-              - Name: !Sub "graviton2-lambda-${ProjectSuffix}"
+              - Name: "graviton2-lambda"
         - Name: Release
           Actions:
             -
               Name: Release
               InputArtifacts:
-                - Name: !Sub "graviton2-lambda-${ProjectSuffix}"
+                - Name: "graviton2-lambda"
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -151,9 +157,11 @@ Resources:
                 Effect: Allow
                 Action: codepipeline:StartPipelineExecution
                 Resource: !Join
-                  - ""
-                  - - "arn:aws:codepipeline:us-east-1:100682590469:"
-                    - !Ref AppPipeline
+                  - ":"
+                  - - "arn:aws:codepipeline"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref CodePipeline
 
   AmazonCloudWatchEventRule:
     Type: AWS::Events::Rule
@@ -164,7 +172,7 @@ Resources:
         detail-type:
           - 'CodeCommit Repository State Change'
         resources:
-          - arn:aws:codecommit:us-east-1:100682590469:graviton2mmw
+          - !GetAtt CodeCommitRepository.Arn
         detail:
           event:
             - referenceCreated
@@ -176,11 +184,13 @@ Resources:
       Targets:
         -
           Arn: !Join
-            - ""
-            - - "arn:aws:codepipeline:us-east-1:100682590469:"
-              - !Ref AppPipeline
+            - ":"
+            - - "arn:aws:codepipeline"
+              - !Ref AWS::Region
+              - !Ref AWS::AccountId
+              - !Ref CodePipeline
           RoleArn: !GetAtt AmazonCloudWatchEventRole.Arn
-          Id: codepipeline-AppPipeline
+          Id: CodePipeline
 
   functionErrors:
     Type: AWS::CloudWatch::Alarm
@@ -189,20 +199,19 @@ Resources:
       MetricName: Errors
       Dimensions:
         - Name: FunctionName
-          Value: Architecture
+          Value: graviton
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
       Threshold: 0
+      TreatMissingData: notBreaching
       ComparisonOperator: GreaterThanThreshold
 
 Outputs:
-  CodeCommitRepoHTTPS:
-    Description: The HTTPS URL to clone the repository
-    Value: !GetAtt CodeCommitRepository.CloneUrlHttp
-  CodeCommitRepoSSH:
-    Description: The SSH URL to clone the repository
-    Value: !GetAtt CodeCommitRepository.CloneUrlSsh
-  CodeCommitRepoARN:
-    Description: The ARN of the CodeCommit Repo
-    Value: !GetAtt CodeCommitRepository.Arn
+  CodeCommitRemote:
+    Value: !Join
+      - ""
+      - - "codecommit::"
+        - !Ref AWS::Region
+        - "://"
+        - !GetAtt CodeCommitRepository.Name
